@@ -27,8 +27,8 @@ const getSwitchValue2 = () => {
 };
 
 const addBinaryNumbers = (switchValue1, switchValue2) => {
-  const decimal1 = BigInt(parseInt(switchValue1, 2));
-  const decimal2 = BigInt(parseInt(switchValue2, 2));
+  const decimal1 = parseInt(switchValue1, 2);
+  const decimal2 = parseInt(switchValue2, 2);
   const decimalSum = decimal1 + decimal2;
   const binarySum = decimalSum.toString(2);
 
@@ -39,14 +39,20 @@ const subtractBinaryNumbers = (switchValue1, switchValue2) => {
   const decimal1 = parseInt(switchValue1, 2);
   const decimal2 = parseInt(switchValue2, 2);
   const decimalDifference = decimal1 - decimal2;
+
+  // Handle negative results
+  if (decimalDifference < 0) {
+    return "negative";
+  }
+
   const binaryDifference = decimalDifference.toString(2);
 
   return binaryDifference;
 };
 
 const multiplyBinaryNumbers = (switchValue1, switchValue2) => {
-  const decimal1 = BigInt(parseInt(switchValue1, 2));
-  const decimal2 = BigInt(parseInt(switchValue2, 2));
+  const decimal1 = parseInt(switchValue1, 2);
+  const decimal2 = parseInt(switchValue2, 2);
   const decimalProduct = decimal1 * decimal2;
   const binaryProduct = decimalProduct.toString(2);
 
@@ -108,9 +114,9 @@ const handleReset = () => {
 
   resetElements.forEach((element) => (element.textContent = ""));
 
-  updateLightBulbs("00000000");
-  const bulbTextElements = document.querySelectorAll(".bulb-text");
-  bulbTextElements.forEach((element) => (element.textContent = ""));
+  // Clear the bulbs container completely
+  const bulbsContainer = document.querySelector(".bulbs");
+  bulbsContainer.innerHTML = "";
 };
 
 document
@@ -124,6 +130,22 @@ document.querySelector("#addButton").addEventListener("click", () => {
   const switchValue2 = getSwitchValue2();
   const operation = document.querySelector(".plus-symbol").value;
 
+  // Check for multiplication overflow before performing the operation
+  if (operation === "*") {
+    const decimal1 = parseInt(switchValue1, 2);
+    const decimal2 = parseInt(switchValue2, 2);
+    const MAX_9_BIT_VALUE = 511; // 2^9 - 1 (111111111 in binary - 9 bits)
+    const product = decimal1 * decimal2;
+
+    // Check if multiplication would exceed 9 bits (result > 511)
+    if (product > MAX_9_BIT_VALUE) {
+      const productBinary = product.toString(2);
+      alert(`Error: Multiplication result exceeds 9 binary digits and cannot be displayed.\n\nPlease use smaller numbers.\n\nResult:\nBinary: ${productBinary}\nDecimal: ${product}`);
+      handleReset();
+      return;
+    }
+  }
+
   let totalBinary;
   if (operation === "+") {
     totalBinary = addBinaryNumbers(switchValue1, switchValue2);
@@ -135,6 +157,30 @@ document.querySelector("#addButton").addEventListener("click", () => {
     totalBinary = divideBinaryNumbers(switchValue1, switchValue2);
   } else {
     // Handle invalid operation
+    return;
+  }
+
+  // Handle special error cases
+  if (totalBinary === "Division by zero") {
+    alert("Error: Cannot divide by zero.\n\nPlease enter a non-zero value for the second number.");
+    handleReset();
+    return;
+  }
+
+  if (totalBinary === "negative") {
+    const decimal1 = parseInt(switchValue1, 2);
+    const decimal2 = parseInt(switchValue2, 2);
+    const result = decimal1 - decimal2;
+    alert(`Error: Subtraction result is negative and cannot be displayed.\n\nResult:\nDecimal: ${result}\n\nPlease make sure the first number is larger than the second number.`);
+    handleReset();
+    return;
+  }
+
+  // Check if the binary result is more than 9 digits
+  if (totalBinary.length > 9) {
+    const totalDecimal = parseInt(totalBinary, 2);
+    alert(`Error: Result exceeds 9 binary digits and cannot be displayed.\n\nPlease use smaller numbers.\n\nResult:\nBinary: ${totalBinary}\nDecimal: ${totalDecimal}`);
+    handleReset();
     return;
   }
 
